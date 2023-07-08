@@ -21,17 +21,17 @@ where
 impl<T: Clone + std::fmt::Debug> DNode<T> {
     fn as_body(&mut self, other: *mut Self) {
         let a = match &self {
-            DNode::First { value, next } => DNode::Body {
+            Self::First { value, next } => Self::Body {
                 value: value.clone(),
                 next: *next,
                 prev: other,
             },
-            DNode::Body { value, next, prev } => DNode::Body {
+            Self::Body { value, next, prev } => Self::Body {
                 value: value.clone(),
                 next: *next,
                 prev: *prev,
             },
-            DNode::Last { value, prev } => DNode::Body {
+            Self::Last { value, prev } => Self::Body {
                 value: value.clone(),
                 next: other,
                 prev: *prev,
@@ -40,27 +40,27 @@ impl<T: Clone + std::fmt::Debug> DNode<T> {
         *self = a;
     }
 
-    fn next(&self) -> Option<*mut Self> {
+    const fn next(&self) -> Option<*mut Self> {
         match &self {
-            DNode::First { value: _, next }
-            | DNode::Body {
+            Self::First { value: _, next }
+            | Self::Body {
                 value: _,
                 next,
                 prev: _,
             } => Some(*next),
-            DNode::Last { value: _, prev: _ } => None,
+            Self::Last { value: _, prev: _ } => None,
         }
     }
 
-    fn prev(&self) -> Option<*mut Self> {
+    const fn prev(&self) -> Option<*mut Self> {
         match &self {
-            DNode::First { value: _, next: _ } => None,
-            DNode::Body {
+            Self::First { value: _, next: _ } => None,
+            Self::Body {
                 value: _,
                 next: _,
                 prev,
             }
-            | DNode::Last { value: _, prev } => Some(*prev),
+            | Self::Last { value: _, prev } => Some(*prev),
         }
     }
 }
@@ -120,10 +120,10 @@ impl<T: Clone + std::fmt::Debug> DLList<T> {
                 }));
                 unsafe {
                     if let DNode::First { value: _, next } = &mut (*head) {
-                        *next = tail
+                        *next = tail;
                     }
                     if let DNode::Last { value: _, prev } = &mut (*tail) {
-                        *prev = head
+                        *prev = head;
                     }
                 }
                 self.ptr = DLPtr::Multi { head, tail }
@@ -163,10 +163,10 @@ impl<T: Clone + std::fmt::Debug> DLList<T> {
                 }));
                 unsafe {
                     if let DNode::First { value: _, next } = &mut (*head) {
-                        *next = tail
+                        *next = tail;
                     }
                     if let DNode::Last { value: _, prev } = &mut (*tail) {
-                        *prev = head
+                        *prev = head;
                     }
                 }
                 self.ptr = DLPtr::Multi { head, tail }
@@ -205,11 +205,11 @@ impl<T: Clone + std::fmt::Debug> DLList<T> {
                     let mut curr = *head;
                     for _ in 0..a {
                         unsafe {
-                            curr = (*curr).next().unwrap();
+                            curr = (*curr).next().expect("Impossible");
                         }
                     }
                     let next = curr;
-                    let prev = unsafe { (*curr).prev().unwrap() };
+                    let prev = unsafe { (*curr).prev().expect("Impossible") };
                     let new_node = DNode::Body {
                         value: item,
                         next,
@@ -257,8 +257,8 @@ impl<T: Clone + std::fmt::Debug> DLList<T> {
                     Some(value)
                 }
                 DLPtr::Multi { head, tail } => {
+                    self.length -= 1;
                     if length == 2 {
-                        self.length -= 1;
                         match idx {
                             0 => {
                                 let (DNode::Body {
@@ -311,10 +311,9 @@ impl<T: Clone + std::fmt::Debug> DLList<T> {
                             _ => None,
                         }
                     } else {
-                        self.length -= 1;
                         let mut curr = *head;
                         for _ in 0..idx {
-                            curr = unsafe { (*curr).next().unwrap() };
+                            curr = unsafe { (*curr).next().expect("Impossible") };
                         }
                         unsafe {
                             match &*Box::from_raw(curr) {
